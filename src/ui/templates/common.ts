@@ -282,7 +282,7 @@ export const COMMON_PANEL_HTML = `
         <div class="md-container">
           <div>
             <label for="md-input">Markdown Source:</label>
-            <textarea id="md-input" placeholder="Type Markdown here... (# Header, **bold**, - list, \`code\`)" style="min-height: 280px; font-family: 'JetBrains Mono', monospace; font-size: 14px;"></textarea>
+            <textarea id="md-input" placeholder="Type Markdown here... (# Header, **bold**, - list, \`code\`)" style="min-height: 380px; font-family: 'JetBrains Mono', monospace; font-size: 14px;"></textarea>
           </div>
 
           <div id="md-print-area">

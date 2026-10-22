@@ -36,13 +36,13 @@ export const CSS_STYLES = `
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 30px 16px 60px;
+    padding: 30px 24px 80px;
     line-height: 1.4;
   }
 
   .container {
     width: 100%;
-    max-width: 680px;
+    max-width: 1120px;
   }
 
   /* Header */
@@ -147,10 +147,10 @@ export const CSS_STYLES = `
     background: var(--card-bg);
     border: 2.5px solid var(--border);
     border-radius: var(--wobble-1);
-    box-shadow: 5px 6px 0px var(--border);
-    padding: 30px 26px;
+    box-shadow: 6px 8px 0px var(--border);
+    padding: 36px 40px;
     position: relative;
-    transform: rotate(-0.2deg);
+    transform: rotate(-0.1deg);
     transition: transform 0.2s ease;
   }
 
@@ -508,8 +508,8 @@ export const CSS_STYLES = `
 
   .unit-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
     margin-top: 16px;
   }
 
@@ -553,9 +553,9 @@ export const CSS_STYLES = `
     background: #ffffff;
     border: 2px solid var(--border);
     border-radius: 8px;
-    padding: 16px;
-    min-height: 250px;
-    max-height: 480px;
+    padding: 20px;
+    min-height: 380px;
+    max-height: 580px;
     overflow-y: auto;
     font-family: system-ui, -apple-system, sans-serif;
     font-size: 16px;
