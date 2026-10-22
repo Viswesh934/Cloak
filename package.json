@@ -8,7 +8,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types test/api.test.ts"
+    "test": "node --experimental-strip-types --test test/api.test.ts test/crypto.test.ts"
   },
   "keywords": [
     "secret-sharing",
