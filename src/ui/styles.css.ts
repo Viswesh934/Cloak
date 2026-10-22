@@ -457,8 +457,178 @@ export const CSS_STYLES = `
     display: none !important;
   }
 
+  /* --- Common Ball Utilities Styling --- */
+  .preset-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 16px;
+  }
+
+  .preset-pill {
+    background: #ffffff;
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    padding: 3px 12px;
+    font-size: 15px;
+    font-family: 'Patrick Hand', cursive, sans-serif;
+    cursor: pointer;
+    box-shadow: 1px 1px 0 var(--border);
+    transition: all 0.1s ease;
+  }
+
+  .preset-pill:hover {
+    background: var(--yellow-hl);
+    transform: translateY(-1px);
+  }
+
+  .regex-test-box {
+    min-height: 80px;
+    background: #ffffff;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+    box-shadow: 2px 2px 0 var(--border);
+    margin-top: 10px;
+  }
+
+  .regex-match {
+    background-color: var(--yellow-hl);
+    border-bottom: 2px dashed #ca8a04;
+    padding: 1px 2px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+
+  .unit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .unit-card {
+    background: #ffffff;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 2px 2px 0 var(--border);
+  }
+
+  .unit-card-label {
+    font-size: 16px;
+    color: #71717a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .unit-card-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 4px;
+    word-break: break-all;
+  }
+
+  .md-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (min-width: 640px) {
+    .md-container {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .md-preview {
+    background: #ffffff;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 250px;
+    max-height: 480px;
+    overflow-y: auto;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    box-shadow: 2px 2px 0 var(--border);
+  }
+
+  .md-preview h1 { font-size: 26px; border-bottom: 2px solid #e4e4e7; padding-bottom: 6px; margin: 12px 0 8px; }
+  .md-preview h2 { font-size: 22px; border-bottom: 1px solid #e4e4e7; padding-bottom: 4px; margin: 10px 0 6px; }
+  .md-preview h3 { font-size: 18px; margin: 8px 0 4px; }
+  .md-preview p { margin-bottom: 10px; }
+  .md-preview ul, .md-preview ol { padding-left: 24px; margin-bottom: 10px; }
+  .md-preview blockquote {
+    border-left: 4px solid var(--border);
+    padding-left: 12px;
+    margin: 10px 0;
+    color: #52525b;
+    font-style: italic;
+    background: #fbfbfb;
+  }
+  .md-preview code {
+    background: #f4f4f5;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+  }
+  .md-preview pre {
+    background: #27272a;
+    color: #fafafa;
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 10px 0;
+  }
+  .md-preview pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+  }
+
   @keyframes popIn {
     0% { opacity: 0; transform: scale(0.96) rotate(-1deg); }
     100% { opacity: 1; transform: scale(1) rotate(0.4deg); }
+  }
+
+  /* --- Print to PDF Optimization --- */
+  @media print {
+    body {
+      background: #ffffff !important;
+      padding: 0 !important;
+    }
+    .container > *:not(#panel-common),
+    #panel-common > .sketch-card > *:not(#tool-md-pdf),
+    #tool-md-pdf > *:not(#md-print-area),
+    .nav-tabs,
+    .sub-tabs,
+    .controls,
+    .footer,
+    button,
+    textarea,
+    label {
+      display: none !important;
+    }
+    #md-print-area {
+      display: block !important;
+      width: 100% !important;
+    }
+    .md-preview {
+      border: none !important;
+      box-shadow: none !important;
+      max-height: none !important;
+      overflow: visible !important;
+      padding: 0 !important;
+    }
   }
 `;

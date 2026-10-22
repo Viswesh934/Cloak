@@ -17,6 +17,7 @@ export const HEADER_HTML = `
     <nav class="nav-tabs">
       <button id="nav-secret" class="tab-btn active">🔒 Ephemeral Secret</button>
       <button id="nav-tools" class="tab-btn">🔑 Keys, Hashes & Salts</button>
+      <button id="nav-common" class="tab-btn">🔮 Common Ball</button>
     </nav>
   </header>
 `;

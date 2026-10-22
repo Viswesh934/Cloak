@@ -5,22 +5,21 @@ export const CLIENT_APP_SCRIPT = `
   // --- Navigation Tabs Controller ---
   const navSecret = document.getElementById("nav-secret");
   const navTools = document.getElementById("nav-tools");
+  const navCommon = document.getElementById("nav-common");
   const panelSecret = document.getElementById("panel-secret");
   const panelTools = document.getElementById("panel-tools");
+  const panelCommon = document.getElementById("panel-common");
 
-  navSecret.addEventListener("click", () => {
-    navSecret.classList.add("active");
-    navTools.classList.remove("active");
-    panelSecret.classList.remove("hidden");
-    panelTools.classList.add("hidden");
-  });
+  function switchMainTab(activeNav, activePanel) {
+    [navSecret, navTools, navCommon].forEach(n => { if (n) n.classList.remove("active"); });
+    [panelSecret, panelTools, panelCommon].forEach(p => { if (p) p.classList.add("hidden"); });
+    if (activeNav) activeNav.classList.add("active");
+    if (activePanel) activePanel.classList.remove("hidden");
+  }
 
-  navTools.addEventListener("click", () => {
-    navTools.classList.add("active");
-    navSecret.classList.remove("active");
-    panelTools.classList.remove("hidden");
-    panelSecret.classList.add("hidden");
-  });
+  if (navSecret) navSecret.addEventListener("click", () => switchMainTab(navSecret, panelSecret));
+  if (navTools) navTools.addEventListener("click", () => switchMainTab(navTools, panelTools));
+  if (navCommon) navCommon.addEventListener("click", () => switchMainTab(navCommon, panelCommon));
 
   // --- Sub Tabs Controller ---
   const subHsmGen = document.getElementById("sub-hsm-gen");

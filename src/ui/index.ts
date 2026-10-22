@@ -2,9 +2,11 @@ import { CSS_STYLES } from "./styles.css.ts";
 import { HEADER_HTML } from "./templates/header.ts";
 import { SECRET_PANEL_HTML } from "./templates/secret.ts";
 import { TOOLS_PANEL_HTML } from "./templates/tools.ts";
+import { COMMON_PANEL_HTML } from "./templates/common.ts";
 import { FOOTER_HTML } from "./templates/footer.ts";
 import { CLIENT_CRYPTO_SCRIPT } from "./scripts/crypto.js.ts";
 import { CLIENT_APP_SCRIPT } from "./scripts/app.js.ts";
+import { CLIENT_COMMON_SCRIPT } from "./scripts/common.js.ts";
 
 /**
  * Cloak Web UI HTML Assembly
@@ -36,6 +38,9 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     <!-- SECTION 2: DEVELOPER CRYPTOGRAPHY & KEYS TOOLKIT -->
 ` + TOOLS_PANEL_HTML + `
 
+    <!-- SECTION 3: COMMON BALL DEVELOPER UTILITIES -->
+` + COMMON_PANEL_HTML + `
+
 ` + FOOTER_HTML + `
   </div>
 
@@ -43,6 +48,8 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
 ` + CLIENT_CRYPTO_SCRIPT + `
 
 ` + CLIENT_APP_SCRIPT + `
+
+` + CLIENT_COMMON_SCRIPT + `
   </script>
 </body>
 </html>`;
