@@ -12,17 +12,169 @@ export const CLIENT_APP_SCRIPT = `
   const panelCommon = document.getElementById("panel-common");
   const panelInfra = document.getElementById("panel-infra");
 
+  const mainTabs = [
+    { nav: navSecret, panel: panelSecret, id: "secret" },
+    { nav: navTools, panel: panelTools, id: "tools" },
+    { nav: navCommon, panel: panelCommon, id: "common" },
+    { nav: navInfra, panel: panelInfra, id: "infra" }
+  ];
+
+  let activeMainIndex = 0;
+
   function switchMainTab(activeNav, activePanel) {
-    [navSecret, navTools, navCommon, navInfra].forEach(n => { if (n) n.classList.remove("active"); });
-    [panelSecret, panelTools, panelCommon, panelInfra].forEach(p => { if (p) p.classList.add("hidden"); });
+    mainTabs.forEach((tab, idx) => {
+      if (tab.nav) tab.nav.classList.remove("active");
+      if (tab.panel) tab.panel.classList.add("hidden");
+      if (tab.nav === activeNav || tab.panel === activePanel) {
+        activeMainIndex = idx;
+      }
+    });
     if (activeNav) activeNav.classList.add("active");
     if (activePanel) activePanel.classList.remove("hidden");
   }
 
-  if (navSecret) navSecret.addEventListener("click", () => switchMainTab(navSecret, panelSecret));
-  if (navTools) navTools.addEventListener("click", () => switchMainTab(navTools, panelTools));
-  if (navCommon) navCommon.addEventListener("click", () => switchMainTab(navCommon, panelCommon));
-  if (navInfra) navInfra.addEventListener("click", () => switchMainTab(navInfra, panelInfra));
+  mainTabs.forEach(tab => {
+    if (tab.nav) {
+      tab.nav.addEventListener("click", () => switchMainTab(tab.nav, tab.panel));
+    }
+  });
+
+  // Cycle through sub-tabs in currently active main panel
+  function cycleSubTabs(direction) {
+    const currentPanel = mainTabs[activeMainIndex].panel;
+    if (!currentPanel) return;
+    const subTabBtns = Array.from(currentPanel.querySelectorAll(".sub-tab-btn"));
+    if (subTabBtns.length <= 1) return;
+
+    const currentSubIdx = subTabBtns.findIndex(b => b.classList.contains("active"));
+    const nextSubIdx = direction > 0
+      ? (currentSubIdx + 1) % subTabBtns.length
+      : (currentSubIdx - 1 + subTabBtns.length) % subTabBtns.length;
+
+    subTabBtns[nextSubIdx].click();
+  }
+
+  // --- Keyboard Shortcuts Modal Controller ---
+  const shortcutsModal = document.getElementById("shortcuts-modal");
+  const btnOpenShortcuts = document.getElementById("btn-open-shortcuts");
+  const btnCloseShortcuts = document.getElementById("btn-close-shortcuts");
+
+  function toggleShortcutsModal(show) {
+    if (!shortcutsModal) return;
+    if (show === undefined) {
+      shortcutsModal.classList.toggle("hidden");
+    } else if (show) {
+      shortcutsModal.classList.remove("hidden");
+    } else {
+      shortcutsModal.classList.add("hidden");
+    }
+  }
+
+  if (btnOpenShortcuts) btnOpenShortcuts.addEventListener("click", () => toggleShortcutsModal(true));
+  if (btnCloseShortcuts) btnCloseShortcuts.addEventListener("click", () => toggleShortcutsModal(false));
+  if (shortcutsModal) {
+    shortcutsModal.addEventListener("click", (e) => {
+      if (e.target === shortcutsModal) toggleShortcutsModal(false);
+    });
+  }
+
+  // --- Global Keyboard Shortcuts Listener ---
+  window.addEventListener("keydown", (e) => {
+    const isEditingText = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName) ||
+      document.activeElement?.isContentEditable;
+
+    // 1. Close modal with Escape or blur text input
+    if (e.key === "Escape") {
+      if (shortcutsModal && !shortcutsModal.classList.contains("hidden")) {
+        toggleShortcutsModal(false);
+        e.preventDefault();
+        return;
+      }
+      if (isEditingText) {
+        document.activeElement.blur();
+        e.preventDefault();
+        return;
+      }
+    }
+
+    // 2. Open shortcuts cheatsheet with '?'
+    if (e.key === "?" && !isEditingText) {
+      toggleShortcutsModal();
+      e.preventDefault();
+      return;
+    }
+
+    // 3. Cmd+Enter / Ctrl+Enter: Trigger primary action of active tool
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      if (activeMainIndex === 0) {
+        const createBtn = document.getElementById("create-btn");
+        if (createBtn && !createBtn.classList.contains("hidden")) createBtn.click();
+      } else if (activeMainIndex === 1) {
+        const activeSub = mainTabs[1].panel?.querySelector(".sub-tab-btn.active");
+        if (activeSub?.id === "sub-hsm-gen") document.getElementById("btn-gen-hsm")?.click();
+        if (activeSub?.id === "sub-key-gen") document.getElementById("btn-gen-keypair")?.click();
+        if (activeSub?.id === "sub-bcrypt") document.getElementById("btn-hash-pw")?.click();
+        if (activeSub?.id === "sub-hasher") document.getElementById("btn-calc-hashes")?.click();
+        if (activeSub?.id === "sub-hmac") document.getElementById("btn-sign-hmac")?.click();
+        if (activeSub?.id === "sub-salts") document.getElementById("btn-gen-salt")?.click();
+      } else if (activeMainIndex === 2) {
+        const activeSub = mainTabs[2].panel?.querySelector(".sub-tab-btn.active");
+        if (activeSub?.id === "sub-json") document.getElementById("btn-json-prettify")?.click();
+        if (activeSub?.id === "sub-md") document.getElementById("btn-md-print")?.click();
+      } else if (activeMainIndex === 3) {
+        const activeSub = mainTabs[3].panel?.querySelector(".sub-tab-btn.active");
+        if (activeSub?.id === "sub-audit") document.getElementById("btn-audit-search")?.click();
+      }
+      return;
+    }
+
+    // 4. Alt + ArrowLeft / ArrowRight: Switch main tabs anywhere (even while typing)
+    if (e.altKey && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+      e.preventDefault();
+      const dir = e.key === "ArrowRight" ? 1 : -1;
+      const nextIndex = (activeMainIndex + dir + mainTabs.length) % mainTabs.length;
+      switchMainTab(mainTabs[nextIndex].nav, mainTabs[nextIndex].panel);
+      return;
+    }
+
+    // Don't intercept single-key navigation if user is actively typing in text fields
+    if (isEditingText) return;
+
+    // 5. ArrowLeft / ArrowRight (or 'h' / 'l'): Cycle main tabs
+    if (e.key === "ArrowRight" || e.key === "l") {
+      e.preventDefault();
+      const nextIndex = (activeMainIndex + 1) % mainTabs.length;
+      switchMainTab(mainTabs[nextIndex].nav, mainTabs[nextIndex].panel);
+      return;
+    }
+    if (e.key === "ArrowLeft" || e.key === "h") {
+      e.preventDefault();
+      const nextIndex = (activeMainIndex - 1 + mainTabs.length) % mainTabs.length;
+      switchMainTab(mainTabs[nextIndex].nav, mainTabs[nextIndex].panel);
+      return;
+    }
+
+    // 6. Direct number keys 1, 2, 3, 4
+    if (["1", "2", "3", "4"].includes(e.key)) {
+      e.preventDefault();
+      const idx = parseInt(e.key, 10) - 1;
+      if (mainTabs[idx]) switchMainTab(mainTabs[idx].nav, mainTabs[idx].panel);
+      return;
+    }
+
+    // 7. ArrowDown / ArrowUp (or 'j' / 'k' or '[' / ']'): Cycle sub-tabs in current panel
+    if (e.key === "ArrowDown" || e.key === "]" || e.key === "j") {
+      e.preventDefault();
+      cycleSubTabs(1);
+      return;
+    }
+    if (e.key === "ArrowUp" || e.key === "[" || e.key === "k") {
+      e.preventDefault();
+      cycleSubTabs(-1);
+      return;
+    }
+  });
 
   // --- Sub Tabs Controller ---
   const subHsmGen = document.getElementById("sub-hsm-gen");

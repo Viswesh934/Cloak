@@ -15,10 +15,10 @@ export const HEADER_HTML = `
 
     <!-- Main Navigation Tabs -->
     <nav class="nav-tabs">
-      <button id="nav-secret" class="tab-btn active">🔒 Ephemeral Secret</button>
-      <button id="nav-tools" class="tab-btn">🔑 Keys, Hashes & Salts</button>
-      <button id="nav-common" class="tab-btn">🔮 Common Ball</button>
-      <button id="nav-infra" class="tab-btn">⚙️ Systems & Infra</button>
+      <button id="nav-secret" class="tab-btn active">🔒 Ephemeral Secret <kbd class="nav-kbd">1</kbd></button>
+      <button id="nav-tools" class="tab-btn">🔑 Keys, Hashes & Salts <kbd class="nav-kbd">2</kbd></button>
+      <button id="nav-common" class="tab-btn">🔮 Common Ball <kbd class="nav-kbd">3</kbd></button>
+      <button id="nav-infra" class="tab-btn">⚙️ Systems & Infra <kbd class="nav-kbd">4</kbd></button>
     </nav>
   </header>
 `;

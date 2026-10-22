@@ -699,6 +699,65 @@ export const CSS_STYLES = `
     color: #b45309;
   }
 
+  /* --- Keyboard Shortcuts Styling --- */
+  kbd {
+    display: inline-block;
+    padding: 2px 7px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--ink);
+    background: #f4f4f5;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 1px 1.5px 0 var(--border);
+    margin: 0 2px;
+  }
+
+  .nav-kbd {
+    font-size: 13px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: none;
+    margin-left: 6px;
+    vertical-align: middle;
+    color: #52525b;
+  }
+
+  .tab-btn.active .nav-kbd {
+    background: rgba(0, 0, 0, 0.12);
+    border-color: rgba(0, 0, 0, 0.4);
+    color: var(--ink);
+  }
+
+  .shortcuts-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(24, 24, 27, 0.4);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+
+  .shortcuts-card {
+    background: var(--card-bg);
+    border: 2.5px solid var(--border);
+    border-radius: var(--wobble-1);
+    box-shadow: 6px 8px 0 var(--border);
+    padding: 28px 32px;
+    max-width: 540px;
+    width: 90%;
+    position: relative;
+    animation: popIn 0.15s ease-out;
+  }
+
   @keyframes popIn {
     0% { opacity: 0; transform: scale(0.96) rotate(-1deg); }
     100% { opacity: 1; transform: scale(1) rotate(0.4deg); }
