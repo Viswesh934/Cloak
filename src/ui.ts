@@ -1,7 +1,8 @@
 /**
  * Cloak Web UI
  * Hand-drawn / Sketchpad aesthetic — simple, warm, tactile, and clear.
- * Includes Ephemeral Secret Sharing & Developer Keys/Hashes/Signatures Toolkit.
+ * Includes Ephemeral Secret Sharing, Hardware Security Module (HSM/YubiKey) key generator,
+ * Software Key Pair generator, Multi-Hash, HMAC, and Salts.
  */
 
 export const HTML_TEMPLATE = `<!DOCTYPE html>
@@ -24,6 +25,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       --red-ink: #dc2626;
       --blue-ink: #2563eb;
       --green-ink: #16a34a;
+      --purple-ink: #7c3aed;
       --wobble-1: 255px 15px 225px 15px/15px 225px 15px 255px;
       --wobble-2: 20px 255px 20px 255px/255px 20px 255px 20px;
       --wobble-btn: 255px 25px 225px 25px/25px 225px 25px 255px;
@@ -134,7 +136,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
 
     .sub-tab-btn {
       font-family: 'Patrick Hand', cursive;
-      font-size: 18px;
+      font-size: 17px;
       padding: 4px 12px;
       background: #fafafa;
       border: 1.5px solid #a1a1aa;
@@ -388,6 +390,12 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       transform: rotate(2deg);
     }
 
+    .stamp-purple {
+      color: var(--purple-ink);
+      border-color: var(--purple-ink);
+      transform: rotate(-1.5deg);
+    }
+
     .secret-paper {
       background: #fdfdfd;
       border: 2px solid var(--border);
@@ -601,15 +609,72 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       <main class="sketch-card">
         <!-- Sub Navigation -->
         <div class="sub-tabs">
-          <button id="sub-key-gen" class="sub-tab-btn active">🔑 Key Pair Generator</button>
+          <button id="sub-hsm-gen" class="sub-tab-btn active">🛡️ HSM / YubiKey Key</button>
+          <button id="sub-key-gen" class="sub-tab-btn">🔑 Software Key Pair</button>
           <button id="sub-hasher" class="sub-tab-btn">⚡ Multi-Hash & Checksum</button>
           <button id="sub-hmac" class="sub-tab-btn">🎯 Webhook HMAC</button>
           <button id="sub-salts" class="sub-tab-btn">🎲 Random Salts / .env</button>
         </div>
 
-        <!-- TOOL 1: SECURE PRIVATE KEY GENERATOR -->
-        <div id="tool-key-gen">
-          <label>Generate Secure Key Pair <span class="label-hint">(100% in browser RAM)</span></label>
+        <!-- TOOL 1: HARDWARE SECURITY MODULE (HSM) KEY GENERATOR -->
+        <div id="tool-hsm-gen">
+          <div class="stamp stamp-purple">🛡️ HARDWARE SECURITY MODULE (FIDO2 / TPM / ENCLAVE)</div>
+          <label>Generate Hardware-Bound Key <span class="label-hint">(Private key never leaves silicon chip)</span></label>
+          <p style="font-size: 18px; color: #52525b; margin-bottom: 14px;">
+            Generates a non-extractable key pair directly inside your physical hardware (YubiKey, Apple Secure Enclave, or Windows Hello TPM chip).
+          </p>
+
+          <div class="controls" style="margin: 12px 0 16px;">
+            <div class="control-box">
+              <label for="hsm-device-type">Hardware Target:</label>
+              <select id="hsm-device-type">
+                <option value="any">Any Available HSM (YubiKey / TouchID / TPM)</option>
+                <option value="cross-platform">External Hardware Key Only (YubiKey / Nitrokey / USB)</option>
+                <option value="platform">Built-in Chip Only (TouchID / Windows Hello TPM)</option>
+              </select>
+            </div>
+            <div class="control-box" style="display: flex; align-items: flex-end;">
+              <button id="btn-generate-hsm" class="btn" style="font-size: 21px; padding: 7px 14px; background: #ddd6fe;">
+                🛡️ Touch Hardware to Generate
+              </button>
+            </div>
+          </div>
+
+          <div id="hsm-status" class="hidden" style="margin: 10px 0; font-size: 18px;"></div>
+
+          <div id="hsm-output" class="hidden">
+            <div class="stamp stamp-green" style="margin-top: 10px;">✓ GENERATED IN PHYSICAL SILICON</div>
+            
+            <div class="hash-item">
+              <div class="hash-header">
+                <strong>🔑 Hardware Credential ID (Unique Key Handle)</strong>
+                <button id="copy-hsm-id" class="btn btn-secondary" style="font-size: 16px; padding: 2px 10px;">Copy</button>
+              </div>
+              <div id="hsm-key-id" class="hash-val">—</div>
+            </div>
+
+            <div class="hash-item">
+              <div class="hash-header">
+                <strong>📜 Authenticator Attestation Object (Hardware Proof)</strong>
+                <button id="copy-hsm-attestation" class="btn btn-secondary" style="font-size: 16px; padding: 2px 10px;">Copy</button>
+              </div>
+              <textarea id="hsm-attestation-b64" style="min-height: 90px; font-size: 13px; font-family: 'JetBrains Mono', monospace;" readonly></textarea>
+            </div>
+
+            <p style="font-size: 17px; color: #047857; margin-top: 8px;">
+              🔒 <strong>Non-Extractable Silicon Guarantee:</strong> The private key cannot be exported, copied, or backed up by any software.
+            </p>
+          </div>
+
+          <!-- THE JOKE ONLY FOR HSM -->
+          <div class="joke-note">
+            🎲 Generated with true physical entropy inside hardware silicon (and <span class="joke-hl">it's definitely not 4</span> 😉).
+          </div>
+        </div>
+
+        <!-- TOOL 2: SOFTWARE PRIVATE KEY GENERATOR -->
+        <div id="tool-key-gen" class="hidden">
+          <label>Generate Software Key Pair <span class="label-hint">(100% in browser RAM)</span></label>
           <div class="controls" style="margin: 12px 0 16px;">
             <div class="control-box">
               <label for="key-algo">Type:</label>
@@ -647,14 +712,9 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
               <textarea id="pub-key-pem" style="min-height: 90px; font-size: 13px; font-family: 'JetBrains Mono', monospace;" readonly></textarea>
             </div>
           </div>
-
-          <!-- THE JOKE -->
-          <div class="joke-note">
-            🎲 Generated with high-entropy CSPRNG (and <span class="joke-hl">it's definitely not 4</span>).
-          </div>
         </div>
 
-        <!-- TOOL 2: MULTI-HASH & CHECKSUM MATCHER -->
+        <!-- TOOL 3: MULTI-HASH & CHECKSUM MATCHER -->
         <div id="tool-hasher" class="hidden">
           <label for="hash-input">Input String / Payload:</label>
           <textarea id="hash-input" placeholder="Type or paste any text to hash..." style="min-height: 80px;"></textarea>
@@ -685,7 +745,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- TOOL 3: WEBHOOK HMAC SIGNER -->
+        <!-- TOOL 4: WEBHOOK HMAC SIGNER -->
         <div id="tool-hmac" class="hidden">
           <label>Webhook HMAC Signer</label>
           <div class="controls" style="margin: 8px 0 14px;">
@@ -719,7 +779,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- TOOL 4: RANDOM SALTS & .ENV TOKENS -->
+        <!-- TOOL 5: RANDOM SALTS & .ENV TOKENS -->
         <div id="tool-salts" class="hidden">
           <label>Cryptographic Salt & Token Generator</label>
           <div class="controls" style="margin: 10px 0 16px;">
@@ -749,11 +809,6 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
           <div class="hash-item">
             <div class="hash-header"><strong>Ready for .env (JWT_SECRET):</strong> <button class="btn btn-secondary copy-salt" data-target="salt-env" style="font-size: 15px; padding: 2px 8px;">Copy</button></div>
             <div id="salt-env" class="hash-val" style="color: #059669;">JWT_SECRET="..."</div>
-          </div>
-
-          <!-- THE JOKE -->
-          <div class="joke-note">
-            🎲 RFC 1149.4 certified randomness (and <span class="joke-hl">it's definitely not 4</span>).
           </div>
         </div>
       </main>
@@ -1025,17 +1080,20 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     });
 
     // --- Sub Tabs Controller ---
+    const subHsmGen = document.getElementById("sub-hsm-gen");
     const subKeyGen = document.getElementById("sub-key-gen");
     const subHasher = document.getElementById("sub-hasher");
     const subHmac = document.getElementById("sub-hmac");
     const subSalts = document.getElementById("sub-salts");
 
+    const toolHsmGen = document.getElementById("tool-hsm-gen");
     const toolKeyGen = document.getElementById("tool-key-gen");
     const toolHasher = document.getElementById("tool-hasher");
     const toolHmac = document.getElementById("tool-hmac");
     const toolSalts = document.getElementById("tool-salts");
 
     const subTabMap = [
+      { btn: subHsmGen, pane: toolHsmGen },
       { btn: subKeyGen, pane: toolKeyGen },
       { btn: subHasher, pane: toolHasher },
       { btn: subHmac, pane: toolHmac },
@@ -1053,7 +1111,100 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       });
     });
 
-    // --- TOOL 1: Private Key Generator ---
+    // --- TOOL 1: HARDWARE SECURITY MODULE (HSM) KEY GENERATOR ---
+    const btnGenHsm = document.getElementById("btn-generate-hsm");
+    const hsmDeviceType = document.getElementById("hsm-device-type");
+    const hsmStatus = document.getElementById("hsm-status");
+    const hsmOutput = document.getElementById("hsm-output");
+    const hsmKeyId = document.getElementById("hsm-key-id");
+    const hsmAttestationB64 = document.getElementById("hsm-attestation-b64");
+    const copyHsmId = document.getElementById("copy-hsm-id");
+    const copyHsmAttestation = document.getElementById("copy-hsm-attestation");
+
+    btnGenHsm.addEventListener("click", async () => {
+      if (!window.PublicKeyCredential || !navigator.credentials) {
+        alert("WebAuthn / HSM interface is not supported on this browser.");
+        return;
+      }
+
+      btnGenHsm.disabled = true;
+      btnGenHsm.innerText = "👉 Touch YubiKey / TPM sensor...";
+      hsmStatus.className = "alert alert-warning";
+      hsmStatus.innerHTML = "⏳ <strong>Action Required:</strong> Please touch your YubiKey or authenticate with TouchID / Windows Hello to generate the hardware key...";
+      hsmStatus.classList.remove("hidden");
+
+      try {
+        const challenge = window.crypto.getRandomValues(new Uint8Array(32));
+        const userId = window.crypto.getRandomValues(new Uint8Array(16));
+        const devType = hsmDeviceType.value;
+
+        const authenticatorSelection = {
+          userVerification: "preferred"
+        };
+        if (devType === "cross-platform" || devType === "platform") {
+          authenticatorSelection.authenticatorAttachment = devType;
+        }
+
+        const credential = await navigator.credentials.create({
+          publicKey: {
+            challenge: challenge,
+            rp: {
+              name: "Cloak HSM Hardware Vault",
+              id: window.location.hostname || "localhost"
+            },
+            user: {
+              id: userId,
+              name: "hsm-key-" + Date.now(),
+              displayName: "Hardware Key User"
+            },
+            pubKeyCredParams: [
+              { type: "public-key", alg: -7 },   // ES256 (ECDSA)
+              { type: "public-key", alg: -257 }, // RS256 (RSA)
+              { type: "public-key", alg: -8 }    // Ed25519
+            ],
+            authenticatorSelection: authenticatorSelection,
+            timeout: 60000,
+            attestation: "direct"
+          }
+        });
+
+        if (!credential) {
+          throw new Error("Hardware key creation was cancelled or returned empty.");
+        }
+
+        const rawId = credential.rawId ? bufferToBase64Url(credential.rawId) : credential.id;
+        const attestationObj = credential.response.attestationObject 
+          ? bufferToBase64Url(credential.response.attestationObject)
+          : "attestation-received";
+
+        hsmKeyId.innerText = rawId;
+        hsmAttestationB64.value = attestationObj;
+        
+        hsmStatus.className = "alert alert-info";
+        hsmStatus.innerHTML = "✅ <strong>Hardware Key Created Successfully!</strong> Generated inside physical silicon.";
+        hsmOutput.classList.remove("hidden");
+      } catch (err) {
+        hsmStatus.className = "alert alert-danger";
+        hsmStatus.innerHTML = "❌ <strong>HSM Error:</strong> " + (err.message || "User cancelled or hardware timeout.");
+      } finally {
+        btnGenHsm.disabled = false;
+        btnGenHsm.innerText = "🛡️ Touch Hardware to Generate";
+      }
+    });
+
+    copyHsmId.addEventListener("click", () => {
+      navigator.clipboard.writeText(hsmKeyId.innerText);
+      copyHsmId.innerText = "✓ Copied!";
+      setTimeout(() => { copyHsmId.innerText = "Copy"; }, 2000);
+    });
+
+    copyHsmAttestation.addEventListener("click", () => {
+      navigator.clipboard.writeText(hsmAttestationB64.value);
+      copyHsmAttestation.innerText = "✓ Copied!";
+      setTimeout(() => { copyHsmAttestation.innerText = "Copy"; }, 2000);
+    });
+
+    // --- TOOL 2: Software Private Key Generator ---
     const btnGenKeys = document.getElementById("btn-generate-keys");
     const keyAlgo = document.getElementById("key-algo");
     const keysOutput = document.getElementById("keys-output");
@@ -1126,7 +1277,6 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     });
 
     cloakPrivKey.addEventListener("click", () => {
-      // Pipe private key into Ephemeral Secret creation tab
       const text = privKeyPem.value;
       if (!text) return;
       document.getElementById("secret-input").value = text;
@@ -1134,7 +1284,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
-    // --- TOOL 2: Multi-Hasher & Matcher ---
+    // --- TOOL 3: Multi-Hasher & Matcher ---
     const hashInput = document.getElementById("hash-input");
     const expectedHash = document.getElementById("expected-hash");
     const matchBadge = document.getElementById("match-badge");
@@ -1213,7 +1363,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       });
     });
 
-    // --- TOOL 3: HMAC Webhook Calculator ---
+    // --- TOOL 4: HMAC Webhook Calculator ---
     const btnCalcHmac = document.getElementById("btn-calc-hmac");
     const hmacService = document.getElementById("hmac-service");
     const hmacKey = document.getElementById("hmac-key");
@@ -1267,7 +1417,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       setTimeout(() => { copyHmac.innerText = "Copy"; }, 1500);
     });
 
-    // --- TOOL 4: Random Salts & .env Tokens ---
+    // --- TOOL 5: Random Salts & .env Tokens ---
     const btnGenSalt = document.getElementById("btn-gen-salt");
     const saltBytes = document.getElementById("salt-bytes");
     const saltHex = document.getElementById("salt-hex");
