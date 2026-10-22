@@ -1,0 +1,14 @@
+name = "cloak"
+main = "src/index.ts"
+compatibility_date = "2024-10-22"
+compatibility_flags = ["nodejs_compat"]
+
+# Cloudflare Workers KV Namespace binding
+# For local development with `wrangler dev`, a simulated local KV store will be used automatically.
+# Before deploying to production (`wrangler deploy`), create a KV namespace:
+#   npx wrangler kv:namespace create SECRETS_KV
+# and replace the `id` below with the generated namespace ID.
+[[kv_namespaces]]
+binding = "SECRETS_KV"
+id = "SECRETS_KV_ID"
+preview_id = "SECRETS_KV_PREVIEW_ID"
