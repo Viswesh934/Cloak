@@ -8,6 +8,8 @@ import {
   corsHeaders,
 } from "./api.ts";
 
+import { HTML_TEMPLATE } from "./ui.ts";
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -52,14 +54,14 @@ export default {
       return errorResponse(`Method ${method} not allowed for this route`, 405);
     }
 
-    // If client opens the root or static pages in the browser
+    // Serve interactive Web UI for root and secret reveal routes
     if (url.pathname === "/" || url.pathname.startsWith("/secret/")) {
-      return new Response(
-        "Cloak Secret Management API is operational. Frontend will connect here.",
-        {
-          headers: { "Content-Type": "text/plain", ...corsHeaders },
-        }
-      );
+      return new Response(HTML_TEMPLATE, {
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          ...corsHeaders,
+        },
+      });
     }
 
     return errorResponse("Route not found", 404);
