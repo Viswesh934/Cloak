@@ -84,7 +84,8 @@ export const CSS_STYLES = `
   .nav-tabs {
     display: flex;
     justify-content: center;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
     margin: 16px 0 24px;
   }
 
@@ -594,6 +595,108 @@ export const CSS_STYLES = `
     background: transparent;
     color: inherit;
     padding: 0;
+  }
+
+  /* --- Napkin Math & Infra Lab Styling --- */
+  .slider-control {
+    margin-bottom: 14px;
+  }
+
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+    font-size: 17px;
+  }
+
+  .slider-val-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: bold;
+    color: var(--blue-ink);
+    background: #eff6ff;
+    border: 1.5px solid #bfdbfe;
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 15px;
+  }
+
+  .napkin-slider {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: #e4e4e7;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    margin-top: 4px;
+  }
+
+  .napkin-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #facc15;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    box-shadow: 1px 1px 0 var(--border);
+  }
+
+  .napkin-verdict {
+    background: var(--yellow-hl);
+    border: 2.5px solid var(--border);
+    border-radius: var(--wobble-1);
+    padding: 16px;
+    margin-top: 18px;
+    box-shadow: 3px 3px 0 var(--border);
+  }
+
+  .napkin-verdict-title {
+    font-family: 'Caveat', cursive;
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .napkin-verdict-body {
+    font-size: 19px;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .audit-result-card {
+    background: #ffffff;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 14px;
+    box-shadow: 2px 2px 0 var(--border);
+  }
+
+  .audit-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+    border: 1.5px solid var(--border);
+  }
+
+  .audit-badge-healthy {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  .audit-badge-deprecated {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .audit-badge-stale {
+    background: #fef3c7;
+    color: #b45309;
   }
 
   @keyframes popIn {

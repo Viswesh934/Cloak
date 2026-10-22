@@ -134,4 +134,30 @@ test("Cloudflare Worker Secrets API", async (t) => {
     const compareDataInvalid = await compareResInvalid.json() as { match: boolean };
     assert.equal(compareDataInvalid.match, false);
   });
+
+  await t.test("GET /api/audit checks package health", async () => {
+    // Missing pkg
+    const reqMissing = new Request("https://cloak.app/api/audit?ecosystem=npm");
+    const resMissing = await worker.fetch(reqMissing, env, ctx);
+    assert.equal(resMissing.status, 400);
+
+    // npm audit
+    const reqNpm = new Request("https://cloak.app/api/audit?ecosystem=npm&pkg=express");
+    const resNpm = await worker.fetch(reqNpm, env, ctx);
+    assert.equal(resNpm.status, 200);
+    const dataNpm = await resNpm.json() as { ecosystem: string; name: string; version: string; license: string };
+    assert.equal(dataNpm.ecosystem, "npm");
+    assert.equal(dataNpm.name, "express");
+    assert.ok(dataNpm.version);
+    assert.equal(dataNpm.license, "MIT");
+
+    // PyPI audit
+    const reqPypi = new Request("https://cloak.app/api/audit?ecosystem=pypi&pkg=requests");
+    const resPypi = await worker.fetch(reqPypi, env, ctx);
+    assert.equal(resPypi.status, 200);
+    const dataPypi = await resPypi.json() as { ecosystem: string; name: string; version: string };
+    assert.equal(dataPypi.ecosystem, "pypi");
+    assert.equal(dataPypi.name, "requests");
+    assert.ok(dataPypi.version);
+  });
 });

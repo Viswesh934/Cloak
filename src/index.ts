@@ -54,6 +54,12 @@ export default {
       return handleBcryptCompare(request);
     }
 
+    // Package Audit endpoint (npm & pip)
+    if (url.pathname === "/api/audit" && method === "GET") {
+      const { handlePackageAudit } = await import("./api.ts");
+      return handlePackageAudit(request);
+    }
+
     // Match /api/secrets or /aps/secrets endpoints
     const secretPathRegex = /^\/(?:api|aps)\/secrets(?:\/([^\/]+))?\/?$/;
     const match = url.pathname.match(secretPathRegex);

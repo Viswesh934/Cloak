@@ -229,3 +229,70 @@ export async function handleBcryptCompare(request: Request): Promise<Response> {
     return errorResponse(`Bcrypt comparison failed: ${errorMsg}`, 500);
   }
 }
+
+/**
+ * Handle Package Audit (GET /api/audit?ecosystem=npm&pkg=express)
+ */
+export async function handlePackageAudit(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  const ecosystem = (url.searchParams.get("ecosystem") || "npm").toLowerCase();
+  const pkg = url.searchParams.get("pkg")?.trim();
+
+  if (!pkg) {
+    return errorResponse("Missing 'pkg' query parameter", 400);
+  }
+
+  try {
+    if (ecosystem === "npm") {
+      const upstream = await fetch(`https://registry.npmjs.org/${encodeURIComponent(pkg)}/latest`, {
+        headers: { Accept: "application/json" },
+      });
+      if (!upstream.ok) {
+        return errorResponse(`npm package '${pkg}' not found`, 404);
+      }
+      const data = (await upstream.json()) as any;
+      const result = {
+        ecosystem: "npm",
+        name: data.name,
+        version: data.version,
+        description: data.description || "",
+        license: typeof data.license === "string" ? data.license : data.license?.type || "Unknown",
+        unpackedSize: data.dist?.unpackedSize || 0,
+        dependencyCount: data.dependencies ? Object.keys(data.dependencies).length : 0,
+        author: typeof data.author === "string" ? data.author : data.author?.name || "Open Source Maintainers",
+        homepage: data.homepage || "",
+        repository: typeof data.repository === "string" ? data.repository : data.repository?.url || "",
+        deprecated: data.deprecated || null,
+      };
+      return jsonResponse(result);
+    } else if (ecosystem === "pypi" || ecosystem === "pip") {
+      const upstream = await fetch(`https://pypi.org/pypi/${encodeURIComponent(pkg)}/json`, {
+        headers: { Accept: "application/json" },
+      });
+      if (!upstream.ok) {
+        return errorResponse(`PyPI package '${pkg}' not found`, 404);
+      }
+      const data = (await upstream.json()) as any;
+      const info = data.info || {};
+      const result = {
+        ecosystem: "pypi",
+        name: info.name,
+        version: info.version,
+        description: info.summary || "",
+        license: info.license || "Open Source",
+        unpackedSize: (data.urls && data.urls[0]?.size) || 0,
+        dependencyCount: info.requires_dist ? info.requires_dist.length : 0,
+        author: info.author || info.maintainer || "Python Community",
+        homepage: info.home_page || info.project_urls?.Homepage || "",
+        repository: info.project_urls?.Source || info.project_urls?.Repository || info.home_page || "",
+        deprecated: info.yanked ? info.yanked_reason || "Yanked from PyPI" : null,
+      };
+      return jsonResponse(result);
+    } else {
+      return errorResponse("Unsupported ecosystem. Supported: 'npm', 'pip'", 400);
+    }
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Audit error";
+    return errorResponse(`Audit failed: ${errorMsg}`, 500);
+  }
+}

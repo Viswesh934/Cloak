@@ -6,13 +6,15 @@ export const CLIENT_APP_SCRIPT = `
   const navSecret = document.getElementById("nav-secret");
   const navTools = document.getElementById("nav-tools");
   const navCommon = document.getElementById("nav-common");
+  const navInfra = document.getElementById("nav-infra");
   const panelSecret = document.getElementById("panel-secret");
   const panelTools = document.getElementById("panel-tools");
   const panelCommon = document.getElementById("panel-common");
+  const panelInfra = document.getElementById("panel-infra");
 
   function switchMainTab(activeNav, activePanel) {
-    [navSecret, navTools, navCommon].forEach(n => { if (n) n.classList.remove("active"); });
-    [panelSecret, panelTools, panelCommon].forEach(p => { if (p) p.classList.add("hidden"); });
+    [navSecret, navTools, navCommon, navInfra].forEach(n => { if (n) n.classList.remove("active"); });
+    [panelSecret, panelTools, panelCommon, panelInfra].forEach(p => { if (p) p.classList.add("hidden"); });
     if (activeNav) activeNav.classList.add("active");
     if (activePanel) activePanel.classList.remove("hidden");
   }
@@ -20,6 +22,7 @@ export const CLIENT_APP_SCRIPT = `
   if (navSecret) navSecret.addEventListener("click", () => switchMainTab(navSecret, panelSecret));
   if (navTools) navTools.addEventListener("click", () => switchMainTab(navTools, panelTools));
   if (navCommon) navCommon.addEventListener("click", () => switchMainTab(navCommon, panelCommon));
+  if (navInfra) navInfra.addEventListener("click", () => switchMainTab(navInfra, panelInfra));
 
   // --- Sub Tabs Controller ---
   const subHsmGen = document.getElementById("sub-hsm-gen");
