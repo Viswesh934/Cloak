@@ -2,6 +2,7 @@
  * Systems & Infra Lab Template Panel
  * 1. Napkin Capacity Math (System Capacity, Threads, RAM, CPU, RPS)
  * 2. Package Health & Dependency Audit (npm & pip)
+ * 3. Endpoint, Security Headers & DNS Inspector
  */
 export const INFRA_PANEL_HTML = `
   <section id="panel-infra" class="hidden">
@@ -10,6 +11,7 @@ export const INFRA_PANEL_HTML = `
       <div class="sub-tabs">
         <button id="sub-napkin" class="sub-tab-btn active">🧮 Napkin Capacity Math</button>
         <button id="sub-audit" class="sub-tab-btn">🛡️ Package Health & Audit</button>
+        <button id="sub-inspect" class="sub-tab-btn">🌐 Endpoint, SSL & DNS Inspector</button>
       </div>
 
       <!-- TOOL 1: NAPKIN CAPACITY MATH -->
@@ -225,6 +227,116 @@ export const INFRA_PANEL_HTML = `
             🛡️ Audit All Dependencies
           </button>
           <div id="audit-batch-results" style="margin-top: 12px;"></div>
+        </div>
+      </div>
+
+      <!-- TOOL 3: ENDPOINT, SECURITY HEADERS & DNS INSPECTOR -->
+      <div id="tool-inspect" class="hidden">
+        <div class="stamp stamp-purple">🌐 ENDPOINT, SECURITY HEADERS & DNS INSPECTOR</div>
+        <p style="font-size: 18px; color: #52525b; margin-bottom: 12px;">
+          Live inspection of HTTP status, latency, security headers (HSTS, CSP, X-Frame), DNS records, and terminal command equivalents.
+        </p>
+
+        <!-- Presets -->
+        <div class="preset-pills">
+          <span style="font-size: 15px; color: #71717a; align-self: center;">Quick inspect:</span>
+          <button class="preset-pill inspect-preset" data-url="github.com">github.com</button>
+          <button class="preset-pill inspect-preset" data-url="cloudflare.com">cloudflare.com</button>
+          <button class="preset-pill inspect-preset" data-url="google.com">google.com</button>
+          <button class="preset-pill inspect-preset" data-url="cloak.sigireddyviswesh.workers.dev">cloak (Current Edge)</button>
+        </div>
+
+        <!-- Search Bar -->
+        <div style="display: flex; gap: 10px; align-items: stretch; margin-bottom: 14px;">
+          <input type="text" id="inspect-url-input" placeholder="Enter domain or URL (e.g. github.com or https://api.stripe.com)" value="github.com" style="flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 16px;">
+          <button id="btn-inspect-url" class="btn" style="width: auto; font-size: 18px; padding: 6px 20px;">
+            🌐 Inspect Target
+          </button>
+        </div>
+
+        <!-- Results Card -->
+        <div id="inspect-results-area" class="audit-result-card hidden">
+          <!-- Top Row Badges -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+            <div>
+              <span id="inspect-target-url" style="font-size: 22px; font-weight: bold; font-family: 'JetBrains Mono', monospace;">https://github.com</span>
+              <span id="inspect-latency" class="slider-val-badge" style="margin-left: 8px;">48 ms</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <span id="inspect-status-badge" class="audit-badge audit-badge-healthy">200 OK</span>
+              <span id="inspect-security-grade" class="audit-badge" style="background: #e0e7ff; color: #3730a3;">Grade A+</span>
+            </div>
+          </div>
+
+          <!-- 1. Security Headers Evaluation -->
+          <div style="margin-top: 16px;">
+            <label style="font-size: 20px;">🛡️ HTTP Security Headers Audit</label>
+            <div id="inspect-security-table" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- 2. Live DNS Records via Cloudflare DoH -->
+          <div style="margin-top: 22px;">
+            <label style="font-size: 20px;">📡 Live DNS Records (via Cloudflare DoH)</label>
+            <div class="unit-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 8px;">
+              <div class="unit-card" style="padding: 10px;">
+                <div class="unit-card-label">IPv4 (A Records)</div>
+                <div id="inspect-dns-a" class="unit-card-val" style="font-size: 14px;">—</div>
+              </div>
+              <div class="unit-card" style="padding: 10px;">
+                <div class="unit-card-label">IPv6 (AAAA Records)</div>
+                <div id="inspect-dns-aaaa" class="unit-card-val" style="font-size: 14px;">—</div>
+              </div>
+              <div class="unit-card" style="padding: 10px;">
+                <div class="unit-card-label">Mail Exchanger (MX)</div>
+                <div id="inspect-dns-mx" class="unit-card-val" style="font-size: 14px;">—</div>
+              </div>
+              <div class="unit-card" style="padding: 10px;">
+                <div class="unit-card-label">Verification / SPF (TXT)</div>
+                <div id="inspect-dns-txt" class="unit-card-val" style="font-size: 14px; max-height: 80px; overflow-y: auto;">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Terminal Command Equivalents -->
+          <div style="margin-top: 22px;">
+            <label style="font-size: 20px;">💻 Terminal Command Equivalents</label>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <div class="unit-card" style="padding: 8px 12px;">
+                <div class="unit-card-label">
+                  <span>cURL Header Query:</span>
+                  <button class="btn btn-secondary copy-cmd" data-target="cmd-curl" style="font-size: 13px; padding: 1px 7px;">Copy</button>
+                </div>
+                <code id="cmd-curl" style="font-size: 14px; color: #2563eb; display: block; margin-top: 4px;">curl -I -sS https://github.com</code>
+              </div>
+
+              <div class="unit-card" style="padding: 8px 12px;">
+                <div class="unit-card-label">
+                  <span>OpenSSL Certificate & Expiry Query:</span>
+                  <button class="btn btn-secondary copy-cmd" data-target="cmd-openssl" style="font-size: 13px; padding: 1px 7px;">Copy</button>
+                </div>
+                <code id="cmd-openssl" style="font-size: 14px; color: #2563eb; display: block; margin-top: 4px; word-break: break-all;">openssl s_client -connect github.com:443 -servername github.com &lt;/dev/null 2&gt;/dev/null | openssl x509 -noout -dates -issuer</code>
+              </div>
+
+              <div class="unit-card" style="padding: 8px 12px;">
+                <div class="unit-card-label">
+                  <span>dig DNS Query:</span>
+                  <button class="btn btn-secondary copy-cmd" data-target="cmd-dig" style="font-size: 13px; padding: 1px 7px;">Copy</button>
+                </div>
+                <code id="cmd-dig" style="font-size: 14px; color: #2563eb; display: block; margin-top: 4px;">dig +noall +answer github.com ANY</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Raw Headers Inspection -->
+          <div style="margin-top: 22px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <label style="font-size: 20px;">📋 Raw Response Headers</label>
+              <button id="btn-copy-raw-headers" class="btn btn-secondary" style="font-size: 14px; padding: 2px 8px; width: auto;">Copy All Headers</button>
+            </div>
+            <pre id="inspect-raw-headers" style="background: #27272a; color: #fafafa; padding: 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px; max-height: 220px; overflow-y: auto; margin-top: 8px;"></pre>
+          </div>
         </div>
       </div>
     </main>

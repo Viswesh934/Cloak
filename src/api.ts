@@ -16,6 +16,9 @@ export const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
 };
 
 export function jsonResponse(data: unknown, status = 200): Response {
@@ -295,4 +298,170 @@ export async function handlePackageAudit(request: Request): Promise<Response> {
     const errorMsg = err instanceof Error ? err.message : "Audit error";
     return errorResponse(`Audit failed: ${errorMsg}`, 500);
   }
+}
+
+/**
+ * Handle Live Endpoint, Security Headers & DNS Inspection (GET /api/inspect?url=...)
+ */
+export async function handleEndpointInspect(request: Request): Promise<Response> {
+  const urlParam = new URL(request.url).searchParams.get("url")?.trim();
+  if (!urlParam) {
+    return errorResponse("Missing 'url' query parameter", 400);
+  }
+
+  let parsedUrl: URL;
+  try {
+    const candidate = urlParam.startsWith("http://") || urlParam.startsWith("https://")
+      ? urlParam
+      : `https://${urlParam}`;
+    parsedUrl = new URL(candidate);
+  } catch {
+    return errorResponse("Invalid URL format", 400);
+  }
+
+  const targetUrl = parsedUrl.toString();
+  const hostname = parsedUrl.hostname;
+
+  // 1. Fetch endpoint to inspect status & headers
+  let status = 0;
+  let statusText = "";
+  let latencyMs = 0;
+  let redirectLocation: string | null = null;
+  const headersObj: Record<string, string> = {};
+
+  const startTime = Date.now();
+  try {
+    const upstream = await fetch(targetUrl, {
+      method: "GET",
+      redirect: "manual",
+      headers: {
+        "User-Agent": "Cloak-Endpoint-Inspector/1.0 (+https://cloak.dev)",
+        Accept: "*/*",
+      },
+    });
+    latencyMs = Date.now() - startTime;
+    status = upstream.status;
+    statusText = upstream.statusText || (status === 200 ? "OK" : `${status}`);
+    redirectLocation = upstream.headers.get("location");
+
+    upstream.headers.forEach((val, key) => {
+      headersObj[key.toLowerCase()] = val;
+    });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Network error";
+    status = 0;
+    statusText = `Connection failed: ${msg}`;
+    latencyMs = Date.now() - startTime;
+  }
+
+  // 2. Evaluate Security Headers
+  const checks = [
+    {
+      header: "Strict-Transport-Security (HSTS)",
+      key: "strict-transport-security",
+      present: !!headersObj["strict-transport-security"],
+      value: headersObj["strict-transport-security"] || null,
+      description: "Forces HTTPS connections, preventing man-in-the-middle attacks",
+    },
+    {
+      header: "Content-Security-Policy (CSP)",
+      key: "content-security-policy",
+      present: !!headersObj["content-security-policy"],
+      value: headersObj["content-security-policy"] || null,
+      description: "Restricts sources of executable scripts to mitigate XSS",
+    },
+    {
+      header: "X-Frame-Options",
+      key: "x-frame-options",
+      present: !!headersObj["x-frame-options"],
+      value: headersObj["x-frame-options"] || null,
+      description: "Protects against clickjacking attacks within iframes",
+    },
+    {
+      header: "X-Content-Type-Options",
+      key: "x-content-type-options",
+      present: headersObj["x-content-type-options"] === "nosniff",
+      value: headersObj["x-content-type-options"] || null,
+      description: "Prevents MIME-type sniffing of uploaded payloads",
+    },
+    {
+      header: "Referrer-Policy",
+      key: "referrer-policy",
+      present: !!headersObj["referrer-policy"],
+      value: headersObj["referrer-policy"] || null,
+      description: "Governs which referrer info is sent with links",
+    },
+    {
+      header: "Permissions-Policy",
+      key: "permissions-policy",
+      present: !!headersObj["permissions-policy"],
+      value: headersObj["permissions-policy"] || null,
+      description: "Disables browser features like camera, microphone, and geolocation",
+    },
+  ];
+
+  const passedCount = checks.filter((c) => c.present).length;
+  let grade = "F";
+  if (passedCount >= 5) grade = "A+";
+  else if (passedCount === 4) grade = "A";
+  else if (passedCount === 3) grade = "B";
+  else if (passedCount === 2) grade = "C";
+  else if (passedCount === 1) grade = "D";
+
+  // 3. Query Cloudflare DoH for DNS records (A, AAAA, MX, TXT)
+  const dnsRecords: Record<string, string[]> = { A: [], AAAA: [], MX: [], TXT: [] };
+  try {
+    const fetchDns = async (type: string): Promise<string[]> => {
+      const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=${type}`, {
+        headers: { Accept: "application/dns-json" },
+      });
+      if (res.ok) {
+        const json = (await res.json()) as any;
+        if (Array.isArray(json.Answer)) {
+          return json.Answer.map((a: any) => String(a.data || "")).filter(Boolean);
+        }
+      }
+      return [];
+    };
+
+    const [aRecs, aaaaRecs, mxRecs, txtRecs] = await Promise.all([
+      fetchDns("A"),
+      fetchDns("AAAA"),
+      fetchDns("MX"),
+      fetchDns("TXT"),
+    ]);
+
+    dnsRecords.A = aRecs;
+    dnsRecords.AAAA = aaaaRecs;
+    dnsRecords.MX = mxRecs;
+    dnsRecords.TXT = txtRecs.map((t: string) => t.replace(/^"(.*)"$/, "$1"));
+  } catch {
+    // DNS fallback gracefully
+  }
+
+  // 4. Construct terminal equivalent commands
+  const terminalCommands = {
+    curl: `curl -I -sS "${targetUrl}"`,
+    openssl: `openssl s_client -connect ${hostname}:443 -servername ${hostname} </dev/null 2>/dev/null | openssl x509 -noout -dates -issuer -subject`,
+    dig: `dig +noall +answer ${hostname} ANY`,
+  };
+
+  return jsonResponse({
+    targetUrl,
+    hostname,
+    status,
+    statusText,
+    latencyMs,
+    protocol: parsedUrl.protocol.replace(":", "").toUpperCase(),
+    redirectLocation,
+    headers: headersObj,
+    securityAudit: {
+      grade,
+      passedCount,
+      totalCount: checks.length,
+      checks,
+    },
+    dns: dnsRecords,
+    terminalCommands,
+  });
 }

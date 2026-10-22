@@ -125,6 +125,7 @@ export const CLIENT_APP_SCRIPT = `
       } else if (activeMainIndex === 3) {
         const activeSub = mainTabs[3].panel?.querySelector(".sub-tab-btn.active");
         if (activeSub?.id === "sub-audit") document.getElementById("btn-audit-search")?.click();
+        if (activeSub?.id === "sub-inspect") document.getElementById("btn-inspect-url")?.click();
       }
       return;
     }

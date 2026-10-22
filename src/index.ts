@@ -60,6 +60,12 @@ export default {
       return handlePackageAudit(request);
     }
 
+    // Endpoint, Security Headers & DNS Inspector
+    if (url.pathname === "/api/inspect" && method === "GET") {
+      const { handleEndpointInspect } = await import("./api.ts");
+      return handleEndpointInspect(request);
+    }
+
     // Match /api/secrets or /aps/secrets endpoints
     const secretPathRegex = /^\/(?:api|aps)\/secrets(?:\/([^\/]+))?\/?$/;
     const match = url.pathname.match(secretPathRegex);

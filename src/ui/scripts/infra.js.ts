@@ -7,24 +7,28 @@ export const CLIENT_INFRA_SCRIPT = `
   // --- Sub-Tabs Controller for Systems & Infra ---
   const subNapkinBtn = document.getElementById("sub-napkin");
   const subAuditBtn = document.getElementById("sub-audit");
+  const subInspectBtn = document.getElementById("sub-inspect");
   const toolNapkin = document.getElementById("tool-napkin");
   const toolAudit = document.getElementById("tool-audit");
+  const toolInspect = document.getElementById("tool-inspect");
 
-  if (subNapkinBtn && subAuditBtn) {
-    subNapkinBtn.addEventListener("click", () => {
-      subNapkinBtn.classList.add("active");
-      subAuditBtn.classList.remove("active");
-      toolNapkin.classList.remove("hidden");
-      toolAudit.classList.add("hidden");
-    });
+  const infraSubTabs = [
+    { btn: subNapkinBtn, pane: toolNapkin },
+    { btn: subAuditBtn, pane: toolAudit },
+    { btn: subInspectBtn, pane: toolInspect }
+  ];
 
-    subAuditBtn.addEventListener("click", () => {
-      subAuditBtn.classList.add("active");
-      subNapkinBtn.classList.remove("active");
-      toolAudit.classList.remove("hidden");
-      toolNapkin.classList.add("hidden");
+  infraSubTabs.forEach(item => {
+    if (!item.btn) return;
+    item.btn.addEventListener("click", () => {
+      infraSubTabs.forEach(i => {
+        if (i.btn) i.btn.classList.remove("active");
+        if (i.pane) i.pane.classList.add("hidden");
+      });
+      item.btn.classList.add("active");
+      if (item.pane) item.pane.classList.remove("hidden");
     });
-  }
+  });
 
   // ==========================================
   // 1. NAPKIN CAPACITY MATH CONTROLLER
@@ -393,5 +397,153 @@ export const CLIENT_INFRA_SCRIPT = `
       html += "</div>";
       auditBatchResults.innerHTML = html;
     });
+  }
+
+  // ==========================================
+  // 3. ENDPOINT, SECURITY HEADERS & DNS INSPECTOR
+  // ==========================================
+  const inspectUrlInput = document.getElementById("inspect-url-input");
+  const btnInspectUrl = document.getElementById("btn-inspect-url");
+  const inspectResultsArea = document.getElementById("inspect-results-area");
+  const inspectTargetUrl = document.getElementById("inspect-target-url");
+  const inspectLatency = document.getElementById("inspect-latency");
+  const inspectStatusBadge = document.getElementById("inspect-status-badge");
+  const inspectSecurityGrade = document.getElementById("inspect-security-grade");
+  const inspectSecurityTable = document.getElementById("inspect-security-table");
+  const inspectDnsA = document.getElementById("inspect-dns-a");
+  const inspectDnsAaaa = document.getElementById("inspect-dns-aaaa");
+  const inspectDnsMx = document.getElementById("inspect-dns-mx");
+  const inspectDnsTxt = document.getElementById("inspect-dns-txt");
+  const cmdCurl = document.getElementById("cmd-curl");
+  const cmdOpenssl = document.getElementById("cmd-openssl");
+  const cmdDig = document.getElementById("cmd-dig");
+  const inspectRawHeaders = document.getElementById("inspect-raw-headers");
+  const btnCopyRawHeaders = document.getElementById("btn-copy-raw-headers");
+
+  async function runEndpointInspection(url) {
+    if (!url) return;
+    btnInspectUrl.disabled = true;
+    btnInspectUrl.innerText = "⏳ Inspecting...";
+
+    try {
+      const res = await fetch("/api/inspect?url=" + encodeURIComponent(url));
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({ error: "Inspection failed" }));
+        throw new Error(errJson.error || "Inspection failed");
+      }
+      const data = await res.json();
+
+      inspectTargetUrl.innerText = data.targetUrl;
+      inspectLatency.innerText = data.latencyMs + " ms";
+
+      // Status Badge
+      const is2xx = data.status >= 200 && data.status < 300;
+      const is3xx = data.status >= 300 && data.status < 400;
+      inspectStatusBadge.className = is2xx
+        ? "audit-badge audit-badge-healthy"
+        : (is3xx ? "audit-badge audit-badge-stale" : "audit-badge audit-badge-deprecated");
+      inspectStatusBadge.innerText = data.status + " " + data.statusText;
+
+      // Grade Badge
+      const grade = data.securityAudit.grade;
+      inspectSecurityGrade.innerText = "Security Grade: " + grade + " (" + data.securityAudit.passedCount + "/" + data.securityAudit.totalCount + ")";
+      if (grade.startsWith("A")) {
+        inspectSecurityGrade.style.background = "#dcfce7";
+        inspectSecurityGrade.style.color = "#15803d";
+      } else if (grade === "B" || grade === "C") {
+        inspectSecurityGrade.style.background = "#fef3c7";
+        inspectSecurityGrade.style.color = "#b45309";
+      } else {
+        inspectSecurityGrade.style.background = "#fee2e2";
+        inspectSecurityGrade.style.color = "#b91c1c";
+      }
+
+      // Security Checks List
+      let secHtml = "";
+      data.securityAudit.checks.forEach(check => {
+        const pass = check.present;
+        secHtml +=
+          "<div class='unit-card' style='padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;'>" +
+            "<div>" +
+              "<strong>" + check.header + "</strong>" +
+              "<div style='font-size: 13px; color: #71717a; margin-top: 2px;'>" + check.description + "</div>" +
+              (check.value ? "<code style='font-size: 12px; color: #2563eb; display: block; margin-top: 4px; word-break: break-all;'>" + check.value + "</code>" : "") +
+            "</div>" +
+            "<div>" +
+              (pass
+                ? "<span class='audit-badge audit-badge-healthy' style='font-size: 13px;'>✓ PASS</span>"
+                : "<span class='audit-badge audit-badge-deprecated' style='font-size: 13px;'>✕ MISSING</span>") +
+            "</div>" +
+          "</div>";
+      });
+      inspectSecurityTable.innerHTML = secHtml;
+
+      // DNS
+      inspectDnsA.innerHTML = (data.dns.A && data.dns.A.length > 0)
+        ? data.dns.A.map(ip => "<div>" + ip + "</div>").join("")
+        : "None found";
+      inspectDnsAaaa.innerHTML = (data.dns.AAAA && data.dns.AAAA.length > 0)
+        ? data.dns.AAAA.map(ip => "<div>" + ip + "</div>").join("")
+        : "None found";
+      inspectDnsMx.innerHTML = (data.dns.MX && data.dns.MX.length > 0)
+        ? data.dns.MX.map(mx => "<div>" + mx + "</div>").join("")
+        : "None found";
+      inspectDnsTxt.innerHTML = (data.dns.TXT && data.dns.TXT.length > 0)
+        ? data.dns.TXT.map(txt => "<div style='margin-bottom: 4px;'>" + txt + "</div>").join("")
+        : "None found";
+
+      // Terminal commands
+      cmdCurl.innerText = data.terminalCommands.curl;
+      cmdOpenssl.innerText = data.terminalCommands.openssl;
+      cmdDig.innerText = data.terminalCommands.dig;
+
+      // Raw headers
+      let headersText = "";
+      for (const [k, v] of Object.entries(data.headers)) {
+        headersText += k + ": " + v + "\\n";
+      }
+      inspectRawHeaders.innerText = headersText || "No response headers received";
+
+      inspectResultsArea.classList.remove("hidden");
+    } catch (err) {
+      alert("Inspection failed: " + err.message);
+    } finally {
+      btnInspectUrl.disabled = false;
+      btnInspectUrl.innerText = "🌐 Inspect Target";
+    }
+  }
+
+  if (btnInspectUrl) {
+    btnInspectUrl.addEventListener("click", () => {
+      runEndpointInspection(inspectUrlInput.value.trim());
+    });
+
+    document.querySelectorAll(".inspect-preset").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const url = btn.getAttribute("data-url");
+        inspectUrlInput.value = url;
+        runEndpointInspection(url);
+      });
+    });
+
+    document.querySelectorAll(".copy-cmd").forEach(b => {
+      b.addEventListener("click", () => {
+        const targetId = b.getAttribute("data-target");
+        const el = document.getElementById(targetId);
+        if (el) {
+          navigator.clipboard.writeText(el.innerText);
+          b.innerText = "✓";
+          setTimeout(() => { b.innerText = "Copy"; }, 1500);
+        }
+      });
+    });
+
+    if (btnCopyRawHeaders) {
+      btnCopyRawHeaders.addEventListener("click", () => {
+        navigator.clipboard.writeText(inspectRawHeaders.innerText);
+        btnCopyRawHeaders.innerText = "✓ Copied!";
+        setTimeout(() => { btnCopyRawHeaders.innerText = "Copy All Headers"; }, 1500);
+      });
+    }
   }
 `;

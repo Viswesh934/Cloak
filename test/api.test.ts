@@ -160,4 +160,29 @@ test("Cloudflare Worker Secrets API", async (t) => {
     assert.equal(dataPypi.name, "requests");
     assert.ok(dataPypi.version);
   });
+
+  await t.test("GET /api/inspect evaluates endpoint security headers and DNS", async () => {
+    // Missing url
+    const reqMissing = new Request("https://cloak.app/api/inspect");
+    const resMissing = await worker.fetch(reqMissing, env, ctx);
+    assert.equal(resMissing.status, 400);
+
+    // Live endpoint inspect
+    const reqInspect = new Request("https://cloak.app/api/inspect?url=github.com");
+    const resInspect = await worker.fetch(reqInspect, env, ctx);
+    assert.equal(resInspect.status, 200);
+    const data = await resInspect.json() as {
+      targetUrl: string;
+      hostname: string;
+      status: number;
+      securityAudit: { grade: string; checks: any[] };
+      dns: { A: string[] };
+      terminalCommands: { curl: string };
+    };
+    assert.equal(data.hostname, "github.com");
+    assert.ok(data.status);
+    assert.ok(data.securityAudit.grade);
+    assert.ok(data.securityAudit.checks.length > 0);
+    assert.ok(data.terminalCommands.curl.includes("curl"));
+  });
 });
