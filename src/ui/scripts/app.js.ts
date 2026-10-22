@@ -12,11 +12,37 @@ export const CLIENT_APP_SCRIPT = `
   const panelCommon = document.getElementById("panel-common");
   const panelInfra = document.getElementById("panel-infra");
 
+  const appSubtitle = document.getElementById("app-subtitle");
+
   const mainTabs = [
-    { nav: navSecret, panel: panelSecret, id: "secret" },
-    { nav: navTools, panel: panelTools, id: "tools" },
-    { nav: navCommon, panel: panelCommon, id: "common" },
-    { nav: navInfra, panel: panelInfra, id: "infra" }
+    {
+      nav: navSecret,
+      panel: panelSecret,
+      id: "secret",
+      title: "Cloak — Ephemeral Secrets",
+      subtitle: "Drop a secret here. Get a link that disappears."
+    },
+    {
+      nav: navTools,
+      panel: panelTools,
+      id: "tools",
+      title: "Cloak — Keys, Hashes & Salts",
+      subtitle: "Hardware HSM keys, software keypairs, Bcrypt passwords, and cryptographic salts."
+    },
+    {
+      nav: navCommon,
+      panel: panelCommon,
+      id: "common",
+      title: "Cloak — Common Ball Utilities",
+      subtitle: "Everyday developer conversions, regex explainer, cron humanizer, and notes."
+    },
+    {
+      nav: navInfra,
+      panel: panelInfra,
+      id: "infra",
+      title: "Cloak — Systems & Infra Lab",
+      subtitle: "Back-of-the-napkin capacity math, package audits, and live endpoint checks."
+    }
   ];
 
   let activeMainIndex = 0;
@@ -31,6 +57,12 @@ export const CLIENT_APP_SCRIPT = `
     });
     if (activeNav) activeNav.classList.add("active");
     if (activePanel) activePanel.classList.remove("hidden");
+
+    const currentTab = mainTabs[activeMainIndex];
+    if (currentTab) {
+      if (appSubtitle) appSubtitle.innerText = currentTab.subtitle;
+      document.title = currentTab.title;
+    }
   }
 
   mainTabs.forEach(tab => {

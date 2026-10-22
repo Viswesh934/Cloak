@@ -11,7 +11,7 @@ export const HEADER_HTML = `
       </svg>
       <h1>Cloak</h1>
     </div>
-    <div class="subtitle">Drop a secret here. Get a link that disappears.</div>
+    <div id="app-subtitle" class="subtitle">Drop a secret here. Get a link that disappears.</div>
 
     <!-- Main Navigation Tabs -->
     <nav class="nav-tabs">
