@@ -9,6 +9,7 @@ import {
 } from "./api.ts";
 
 import { HTML_TEMPLATE } from "./ui.ts";
+import { FAVICON_SVG } from "./favicon.ts";
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -20,6 +21,17 @@ export default {
       return new Response(null, {
         status: 204,
         headers: corsHeaders,
+      });
+    }
+
+    // Serve favicon directly with caching
+    if (url.pathname === "/favicon.ico" || url.pathname === "/favicon.svg") {
+      return new Response(FAVICON_SVG, {
+        headers: {
+          "Content-Type": "image/svg+xml; charset=utf-8",
+          "Cache-Control": "public, max-age=86400",
+          ...corsHeaders,
+        },
       });
     }
 
