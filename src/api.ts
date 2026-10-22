@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import type {
   Env,
   CreateSecretRequest,
@@ -169,5 +170,62 @@ export async function handleDeleteSecret(
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "KV Delete error";
     return errorResponse(`Failed to delete secret: ${errorMsg}`, 500);
+  }
+}
+
+/**
+ * Handle Bcrypt hashing (POST /api/bcrypt/hash)
+ */
+export async function handleBcryptHash(request: Request): Promise<Response> {
+  let body: { password?: string; rounds?: number };
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse("Invalid JSON payload", 400);
+  }
+
+  const { password } = body;
+  if (!password || typeof password !== "string") {
+    return errorResponse("Missing or invalid 'password'", 400);
+  }
+
+  // Bound rounds between 4 and 13 (default 10) to protect CPU
+  const rounds = Math.min(Math.max(4, Number(body.rounds) || 10), 13);
+
+  try {
+    const salt = bcrypt.genSaltSync(rounds);
+    const hash = bcrypt.hashSync(password, salt);
+    return jsonResponse({ hash, rounds });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Bcrypt error";
+    return errorResponse(`Bcrypt hashing failed: ${errorMsg}`, 500);
+  }
+}
+
+/**
+ * Handle Bcrypt comparison/verification (POST /api/bcrypt/compare)
+ */
+export async function handleBcryptCompare(request: Request): Promise<Response> {
+  let body: { password?: string; hash?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse("Invalid JSON payload", 400);
+  }
+
+  const { password, hash } = body;
+  if (!password || typeof password !== "string") {
+    return errorResponse("Missing or invalid 'password'", 400);
+  }
+  if (!hash || typeof hash !== "string") {
+    return errorResponse("Missing or invalid 'hash'", 400);
+  }
+
+  try {
+    const match = bcrypt.compareSync(password, hash);
+    return jsonResponse({ match });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Bcrypt compare error";
+    return errorResponse(`Bcrypt comparison failed: ${errorMsg}`, 500);
   }
 }

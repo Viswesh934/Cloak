@@ -98,4 +98,40 @@ test("Cloudflare Worker Secrets API", async (t) => {
     const res2 = await worker.fetch(req2, env, ctx);
     assert.equal(res2.status, 400);
   });
+
+  await t.test("POST /api/bcrypt/hash and /api/bcrypt/compare", async () => {
+    // Generate Bcrypt Hash
+    const hashReq = new Request("https://cloak.app/api/bcrypt/hash", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: "MySuperSecretPassword", rounds: 8 }),
+    });
+    const hashRes = await worker.fetch(hashReq, env, ctx);
+    assert.equal(hashRes.status, 200);
+    const hashData = await hashRes.json() as { hash: string; rounds: number };
+    assert.ok(hashData.hash.startsWith("$2b$08$") || hashData.hash.startsWith("$2a$08$"));
+    assert.equal(hashData.rounds, 8);
+
+    // Verify correct password
+    const compareReqValid = new Request("https://cloak.app/api/bcrypt/compare", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: "MySuperSecretPassword", hash: hashData.hash }),
+    });
+    const compareResValid = await worker.fetch(compareReqValid, env, ctx);
+    assert.equal(compareResValid.status, 200);
+    const compareDataValid = await compareResValid.json() as { match: boolean };
+    assert.equal(compareDataValid.match, true);
+
+    // Verify incorrect password
+    const compareReqInvalid = new Request("https://cloak.app/api/bcrypt/compare", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: "WrongPassword123", hash: hashData.hash }),
+    });
+    const compareResInvalid = await worker.fetch(compareReqInvalid, env, ctx);
+    assert.equal(compareResInvalid.status, 200);
+    const compareDataInvalid = await compareResInvalid.json() as { match: boolean };
+    assert.equal(compareDataInvalid.match, false);
+  });
 });

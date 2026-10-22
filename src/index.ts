@@ -44,6 +44,16 @@ export default {
       });
     }
 
+    // Bcrypt utility endpoints
+    if (url.pathname === "/api/bcrypt/hash" && method === "POST") {
+      const { handleBcryptHash } = await import("./api.ts");
+      return handleBcryptHash(request);
+    }
+    if (url.pathname === "/api/bcrypt/compare" && method === "POST") {
+      const { handleBcryptCompare } = await import("./api.ts");
+      return handleBcryptCompare(request);
+    }
+
     // Match /api/secrets or /aps/secrets endpoints
     const secretPathRegex = /^\/(?:api|aps)\/secrets(?:\/([^\/]+))?\/?$/;
     const match = url.pathname.match(secretPathRegex);

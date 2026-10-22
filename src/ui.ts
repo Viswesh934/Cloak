@@ -613,6 +613,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
         <div class="sub-tabs">
           <button id="sub-hsm-gen" class="sub-tab-btn active">🛡️ HSM / YubiKey Key</button>
           <button id="sub-key-gen" class="sub-tab-btn">🔑 Software Key Pair</button>
+          <button id="sub-bcrypt" class="sub-tab-btn">🔐 Bcrypt Hasher & Matcher</button>
           <button id="sub-hasher" class="sub-tab-btn">⚡ Multi-Hash & Checksum</button>
           <button id="sub-hmac" class="sub-tab-btn">🎯 Webhook HMAC</button>
           <button id="sub-salts" class="sub-tab-btn">🎲 Random Salts / .env</button>
@@ -714,6 +715,69 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
               <textarea id="pub-key-pem" style="min-height: 90px; font-size: 13px; font-family: 'JetBrains Mono', monospace;" readonly></textarea>
             </div>
           </div>
+        <!-- TOOL: BCRYPT HASHER & VERIFIER -->
+        <div id="tool-bcrypt" class="hidden">
+          <div class="stamp stamp-green">🔐 BCRYPT PASSWORD HASHER & VERIFIER</div>
+          <label>Generate Bcrypt Hash <span class="label-hint">($2b$ Blowfish Password Hash)</span></label>
+          <p style="font-size: 18px; color: #52525b; margin-bottom: 12px;">
+            Create salted, high-work-factor bcrypt hashes for database seeding, migrations, or auth fixtures.
+          </p>
+
+          <div class="controls" style="margin: 8px 0 14px;">
+            <div class="control-box">
+              <label for="bcrypt-rounds">Cost Factor (Salt Rounds):</label>
+              <select id="bcrypt-rounds">
+                <option value="10" selected>10 Rounds (Default / Industry Standard)</option>
+                <option value="11">11 Rounds (2x Work)</option>
+                <option value="12">12 Rounds (High Security / 4x Work)</option>
+                <option value="8">8 Rounds (Fast / Testing only)</option>
+              </select>
+            </div>
+            <div class="control-box">
+              <label for="bcrypt-plain">Password to Hash:</label>
+              <input type="text" id="bcrypt-plain" class="sketch-input" placeholder="e.g. MySecretPassword123!">
+            </div>
+          </div>
+
+          <button id="btn-hash-bcrypt" class="btn" style="margin-top: 8px;">
+            🔐 Generate Bcrypt Hash
+          </button>
+
+          <div id="bcrypt-result-box" class="hash-item hidden" style="margin-top: 16px;">
+            <div class="hash-header">
+              <strong>Generated Bcrypt Hash ($2b$...):</strong>
+              <div>
+                <button id="copy-bcrypt-hash" class="btn btn-secondary" style="font-size: 15px; padding: 2px 8px;">Copy</button>
+                <button id="cloak-bcrypt-hash" class="btn btn-secondary" style="font-size: 15px; padding: 2px 8px; background: #fef08a;">✂️ Cloak & Share</button>
+              </div>
+            </div>
+            <div id="bcrypt-output" class="hash-val" style="font-size: 14px; color: #0f766e;">—</div>
+          </div>
+
+          <!-- VERIFIER SECTION -->
+          <div style="margin-top: 26px; border-top: 2px dashed #d1d5db; padding-top: 18px;">
+            <label>Verify Password Against Stored Bcrypt Hash</label>
+            <p style="font-size: 17px; color: #52525b; margin-bottom: 10px;">
+              Test if a plaintext password matches an existing bcrypt hash from your database ($2a$... / $2b$...).
+            </p>
+
+            <div class="controls" style="margin: 8px 0 12px;">
+              <div class="control-box">
+                <label for="verify-plain">Password to Test:</label>
+                <input type="text" id="verify-plain" class="sketch-input" placeholder="Plain password to test">
+              </div>
+              <div class="control-box">
+                <label for="verify-hash">Stored Bcrypt Hash from DB:</label>
+                <input type="text" id="verify-hash" class="sketch-input" placeholder="$2a$10$... or $2b$10$...">
+              </div>
+            </div>
+
+            <button id="btn-compare-bcrypt" class="btn btn-secondary" style="width: 100%; font-size: 22px;">
+              ⚡ Compare & Verify Match
+            </button>
+
+            <div id="bcrypt-verify-result" class="hidden" style="margin-top: 14px; text-align: center;"></div>
+          </div>
         </div>
 
         <!-- TOOL 3: MULTI-HASH & CHECKSUM MATCHER -->
@@ -728,6 +792,10 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
           </div>
 
           <div id="hash-results" style="margin-top: 14px;">
+            <div class="hash-item">
+              <div class="hash-header"><strong>Bcrypt (Password Hash)</strong> <button id="quick-bcrypt-btn" class="btn btn-secondary" style="font-size: 15px; padding: 2px 8px; background: #fed7aa;">Compute Bcrypt</button></div>
+              <div id="hash-bcrypt-quick" class="hash-val" style="color: #0f766e;">Click 'Compute Bcrypt' or use the Bcrypt tab</div>
+            </div>
             <div class="hash-item">
               <div class="hash-header"><strong>SHA-256 (Standard)</strong> <button class="btn btn-secondary copy-hash" data-target="hash-sha256" style="font-size: 15px; padding: 2px 8px;">Copy</button></div>
               <div id="hash-sha256" class="hash-val">—</div>
@@ -1084,12 +1152,14 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     // --- Sub Tabs Controller ---
     const subHsmGen = document.getElementById("sub-hsm-gen");
     const subKeyGen = document.getElementById("sub-key-gen");
+    const subBcrypt = document.getElementById("sub-bcrypt");
     const subHasher = document.getElementById("sub-hasher");
     const subHmac = document.getElementById("sub-hmac");
     const subSalts = document.getElementById("sub-salts");
 
     const toolHsmGen = document.getElementById("tool-hsm-gen");
     const toolKeyGen = document.getElementById("tool-key-gen");
+    const toolBcrypt = document.getElementById("tool-bcrypt");
     const toolHasher = document.getElementById("tool-hasher");
     const toolHmac = document.getElementById("tool-hmac");
     const toolSalts = document.getElementById("tool-salts");
@@ -1097,6 +1167,7 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
     const subTabMap = [
       { btn: subHsmGen, pane: toolHsmGen },
       { btn: subKeyGen, pane: toolKeyGen },
+      { btn: subBcrypt, pane: toolBcrypt },
       { btn: subHasher, pane: toolHasher },
       { btn: subHmac, pane: toolHmac },
       { btn: subSalts, pane: toolSalts }
@@ -1286,7 +1357,127 @@ export const HTML_TEMPLATE = `<!DOCTYPE html>
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
+    // --- TOOL: BCRYPT HASHER & VERIFIER ---
+    const btnHashBcrypt = document.getElementById("btn-hash-bcrypt");
+    const bcryptPlain = document.getElementById("bcrypt-plain");
+    const bcryptRounds = document.getElementById("bcrypt-rounds");
+    const bcryptResultBox = document.getElementById("bcrypt-result-box");
+    const bcryptOutput = document.getElementById("bcrypt-output");
+    const copyBcryptHash = document.getElementById("copy-bcrypt-hash");
+    const cloakBcryptHash = document.getElementById("cloak-bcrypt-hash");
+
+    btnHashBcrypt.addEventListener("click", async () => {
+      const password = bcryptPlain.value;
+      if (!password) {
+        alert("Please enter a password to hash!");
+        return;
+      }
+      btnHashBcrypt.disabled = true;
+      btnHashBcrypt.innerText = "⏳ Generating Bcrypt Hash...";
+
+      try {
+        const rounds = parseInt(bcryptRounds.value, 10);
+        const res = await fetch("/api/bcrypt/hash", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password, rounds }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Hashing failed");
+
+        bcryptOutput.innerText = data.hash;
+        bcryptResultBox.classList.remove("hidden");
+      } catch (err) {
+        alert("Bcrypt error: " + err.message);
+      } finally {
+        btnHashBcrypt.disabled = false;
+        btnHashBcrypt.innerText = "🔐 Generate Bcrypt Hash";
+      }
+    });
+
+    copyBcryptHash.addEventListener("click", () => {
+      navigator.clipboard.writeText(bcryptOutput.innerText);
+      copyBcryptHash.innerText = "✓ Copied!";
+      setTimeout(() => { copyBcryptHash.innerText = "Copy"; }, 1500);
+    });
+
+    cloakBcryptHash.addEventListener("click", () => {
+      document.getElementById("secret-input").value = bcryptOutput.innerText;
+      navSecret.click();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    // Bcrypt Verifier
+    const btnCompareBcrypt = document.getElementById("btn-compare-bcrypt");
+    const verifyPlain = document.getElementById("verify-plain");
+    const verifyHash = document.getElementById("verify-hash");
+    const bcryptVerifyResult = document.getElementById("bcrypt-verify-result");
+
+    btnCompareBcrypt.addEventListener("click", async () => {
+      const password = verifyPlain.value;
+      const hash = verifyHash.value.trim();
+
+      if (!password || !hash) {
+        alert("Please provide both the plain password and the stored bcrypt hash!");
+        return;
+      }
+
+      btnCompareBcrypt.disabled = true;
+      btnCompareBcrypt.innerText = "⏳ Comparing...";
+
+      try {
+        const res = await fetch("/api/bcrypt/compare", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password, hash }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Comparison failed");
+
+        bcryptVerifyResult.classList.remove("hidden");
+        if (data.match) {
+          bcryptVerifyResult.innerHTML = '<span class="stamp stamp-green">✓ EXACT MATCH: PASSWORD IS VALID</span>';
+        } else {
+          bcryptVerifyResult.innerHTML = '<span class="stamp">✗ MISMATCH: PASSWORD DOES NOT MATCH HASH</span>';
+        }
+      } catch (err) {
+        bcryptVerifyResult.classList.remove("hidden");
+        bcryptVerifyResult.innerHTML = '<span class="stamp">ERROR: ' + (err.message || 'Comparison failed') + '</span>';
+      } finally {
+        btnCompareBcrypt.disabled = false;
+        btnCompareBcrypt.innerText = "⚡ Compare & Verify Match";
+      }
+    });
+
     // --- TOOL 3: Multi-Hasher & Matcher ---
+    const quickBcryptBtn = document.getElementById("quick-bcrypt-btn");
+    const hashBcryptQuick = document.getElementById("hash-bcrypt-quick");
+
+    quickBcryptBtn.addEventListener("click", async () => {
+      const text = hashInput.value.trim();
+      if (!text) {
+        alert("Please enter some text in the input box above first!");
+        return;
+      }
+      quickBcryptBtn.disabled = true;
+      quickBcryptBtn.innerText = "Hashing...";
+      try {
+        const res = await fetch("/api/bcrypt/hash", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: text, rounds: 10 }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Hashing failed");
+        hashBcryptQuick.innerText = data.hash;
+      } catch (err) {
+        hashBcryptQuick.innerText = "Error: " + err.message;
+      } finally {
+        quickBcryptBtn.disabled = false;
+        quickBcryptBtn.innerText = "Compute Bcrypt";
+      }
+    });
+
     const hashInput = document.getElementById("hash-input");
     const expectedHash = document.getElementById("expected-hash");
     const matchBadge = document.getElementById("match-badge");
