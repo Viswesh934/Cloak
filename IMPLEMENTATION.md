@@ -175,6 +175,16 @@ cloak/
 - [x] **Milestone 1**: Initialize repository with `package.json`, TypeScript, and `wrangler.toml` with KV binding.
 - [x] **Milestone 2**: Build Cloudflare Worker backend API endpoints (`POST /api/secrets`, `GET /api/secrets/:id`).
 - [x] **Milestone 3**: Build client-side cryptographic module with `window.crypto.subtle` (key generation, AES-GCM encryption/decryption, URL hash packing).
-- [x] **Milestone 4**: Craft the frontend interface (Dark mode, responsive, accessible, animated micro-interactions).
+- [x] **Milestone 4**: Craft the frontend interface (Hand-drawn tactile sketchpad aesthetic).
 - [x] **Milestone 5**: Local testing with Wrangler KV simulation and edge verification.
-- [ ] **Milestone 6**: Advanced Security Layer — Password protection with Salt & Hash (PBKDF2 / Key Derivation).
+- [x] **Milestone 6**: Production Deployment to Cloudflare Workers with live Cloudflare KV.
+
+---
+
+## 10. Future Vision: Developer & DB Odd-Jobs Automation Suite
+
+Following the core Cloak deployment, Cloak expands into a zero-fuss toolkit for routine engineer tasks:
+1. **Cryptographic Hashes & Salt Generator**: Instant SHA-256/SHA-512, bcrypt/argon2 salt hashes, HMAC signatures.
+2. **Markdown to PDF Converter**: Quick client-side/edge conversion of `.md` notes and specs into clean printable PDFs.
+3. **Timestamp & Date Normalizer**: Instant epoch ms/s <-> ISO 8601 <-> UTC <-> SQL timestamp parser with timezone offsets.
+4. **JSON / SQL / Log Formatter & Escaper**: Clean unescaping, minifying, pretty-printing, and CSV-to-JSON transforms.

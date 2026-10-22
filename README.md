@@ -2,6 +2,8 @@
 
 > A minimal, zero-knowledge secret management platform designed to share sensitive credentials via ephemeral, self-destructing links.
 
+**Live Deployment**: [https://cloak.sigireddyviswesh.workers.dev](https://cloak.sigireddyviswesh.workers.dev)
+
 Built with **Cloudflare Workers** and **Cloudflare Workers KV**.
 
 ---

@@ -10,5 +10,5 @@ compatibility_flags = ["nodejs_compat"]
 # and replace the `id` below with the generated namespace ID.
 [[kv_namespaces]]
 binding = "SECRETS_KV"
-id = "SECRETS_KV_ID"
-preview_id = "SECRETS_KV_PREVIEW_ID"
+id = "1ba5569f657b44d2a91ad62011f82a6c"
+preview_id = "75d2545aa9b44288bda31df74f32eaa1"
