@@ -175,6 +175,6 @@ cloak/
 - [x] **Milestone 1**: Initialize repository with `package.json`, TypeScript, and `wrangler.toml` with KV binding.
 - [x] **Milestone 2**: Build Cloudflare Worker backend API endpoints (`POST /api/secrets`, `GET /api/secrets/:id`).
 - [x] **Milestone 3**: Build client-side cryptographic module with `window.crypto.subtle` (key generation, AES-GCM encryption/decryption, URL hash packing).
-- [ ] **Milestone 4**: Craft the frontend interface (Dark mode, responsive, accessible, animated micro-interactions).
+- [x] **Milestone 4**: Craft the frontend interface (Dark mode, responsive, accessible, animated micro-interactions).
 - [ ] **Milestone 5**: Local testing with Wrangler KV simulation and edge verification.
 - [ ] **Milestone 6**: Advanced Security Layer — Password protection with Salt & Hash (PBKDF2 / Key Derivation).
